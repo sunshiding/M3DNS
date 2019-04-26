@@ -69,7 +69,7 @@ def get_imcomplete_data(data,ratio):
     random.shuffle(data_id)
     img_id = data_id[:imcomplete_num]
     text_id = data_id[imcomplete_num:imcomplete_num*2]
-    all_id = [imcomplete_num*2:]
+    all_id = data_id[imcomplete_num*2:]
 
     all_data = [data[i] for i in all_id]
     img_data = [data[i] for i in img_id]
