@@ -10,12 +10,12 @@ def load_data(path,hp):
     test_num = int(116 * 0.3)
     semi_num = int(116 * 0.21)
     train_num = data_num - test_num - semi_num
-    train_data = []
+
     data_id = list(range(data_num))
-    train_id = random.sample(data_id,train_num,replace=False)
-    data_id = list(set(data_id)^set(train_id))
-    semi_id = random.sample(data_id,semi_num,replace=False)
-    test_id = list(set(data_id)^set(semi_id))
+    random.shuffle(data_id)
+    train_id = data_id[:train_num]
+    semi_id = data_id[train_num:train_num+semi_num]
+    test_id = data_id[train_num+semi_num:]
 
     np.save("{}train_id.npy",train_id)
     np.save("{}semi_id.npy",semi_id)
@@ -66,10 +66,10 @@ def get_imcomplete_data(data,ratio):
     num = len(data)
     imcomplete_num = int(num * ratio)
     data_id = list(range(len(num)))
-    img_id = random.sample(data_id,imcomplete_num,replace=False)
-    data_id = list(set(data_id)^set(img_id))
-    text_id = random.sample(data_id,imcomplete_num,replace=False)
-    all_id = list(set(data_id)^set(text_id))
+    random.shuffle(data_id)
+    img_id = data_id[:imcomplete_num]
+    text_id = data_id[imcomplete_num:imcomplete_num*2]
+    all_id = [imcomplete_num*2:]
 
     all_data = [data[i] for i in all_id]
     img_data = [data[i] for i in img_id]
