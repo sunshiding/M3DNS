@@ -37,7 +37,7 @@ def pre_train(hp, models, train_data):
 
             for step in range(max_step):
                 # get data
-                step_data = get_batch(data,list(range(step * batch_size: min((step + 1) * batch_size,bag_num))))
+                step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))))
                 x1, x2, bag1, bag2, y = step_data
                 x_text = Variable(x2).cuda()
                 b_y = Variable(y).cuda()
@@ -93,14 +93,14 @@ def train(hp, models, train_data):
     def train_for_dataset(data,train_type):
         loss_record = np.zeros(5)
         if data == None:
-            continue
+            return loss_record
         bag_num = len(data)
         data_num += bag_num
         max_step = int(bag_num/ batch_size)
         while max_step * batch_size < bag_num:
             max_step += 1
         for step in range(max_step):
-            step_data = get_batch(data,list(range(step * batch_size: min((step + 1) * batch_size,bag_num))))
+            step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))))
             x1, x2, bag1, bag2, y = step_data
             if train_type == 0:
                 x_img = Variable(x1).cuda()

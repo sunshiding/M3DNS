@@ -81,7 +81,7 @@ def test(test_data, hp, models):
     label = [None for i in range(view_num)]
     for step in range(max_step):
         # get data
-        step_data = get_batch(test_data,list(range(step * batch_size: min((step + 1) * batch_size,bag_num))))
+        step_data = get_batch(test_data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))))
         x1, x2, bag1, bag2, y = step_data
         x_img = Variable(x1, volatile=True).cuda()
         x_text = Variable(x2, volatile=True).cuda()

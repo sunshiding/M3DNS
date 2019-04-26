@@ -1,11 +1,10 @@
 import os
-
 import numpy as np
 from argparse import ArgumentParser
-from config import configuration
-from model.train import train
-from model.test import test
 import time
+import torch
+import random
+import pickle
 
 from loader.load_data import load_data
 from model.model import load_model
@@ -86,18 +85,18 @@ if __name__ == '__main__':
     # for key in hp.keys():
     #     print(key, hp[key])
 
-    time_str = time.strftime("%m%d-%H%M",time.localtime(time,time()))
-    rootdir = "{}/{}/{}/".format("./result",data_name,time_str)
+    time_str = time.strftime("%m%d-%H%M",time.localtime(time.time()))
+    rootdir = "{}/{}/{}/".format("./result",hp['dataname'],time_str)
     os.makedirs(rootdir, exist_ok=True)
     hp['rootdir'] = rootdir
 
     pickle.dump(hp, open(rootdir+'parameter.pkl', 'wb'))
 
-    #获取数据
-    train_data, test_data = load_data(data_name, ratio)
-
     # 获取模型
-    my_models = load_model(hp['label'], hp['neure_num'], hyper_parameter['pre_train'],"{}/{}/{}/".format("./result",data_name,args.modelpath))
+    my_models = load_model(hp['label'], hp['neure_num'], hp['pretrain'],"{}/{}/{}/".format("./result",hp['dataname'],args.modelpath))
+
+    #获取数据
+    train_data, test_data = load_data(hp['dataname'], hp['ratio'])
 
     # 训练模型
     my_models = train(hp, my_models, train_data)
