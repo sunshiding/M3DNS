@@ -96,7 +96,7 @@ if __name__ == '__main__':
     my_models = load_model(hp['label'], hp['neure_num'], hp['pretrain'],"{}/{}/{}/".format("./result",hp['dataname'],args.modelpath))
 
     #获取数据
-    train_data, test_data = load_data(hp['dataname'], hp['ratio'])
+    train_data, test_data = load_data(hp)
 
     # 训练模型
     my_models = train(hp, my_models, train_data)

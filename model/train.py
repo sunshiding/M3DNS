@@ -37,7 +37,7 @@ def pre_train(hp, models, train_data):
 
             for step in range(max_step):
                 # get data
-                step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))))
+                step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))),hp)
                 x1, x2, bag1, bag2, y = step_data
                 x_text = Variable(x2).cuda()
                 b_y = Variable(y).cuda()
@@ -100,7 +100,7 @@ def train(hp, models, train_data):
         while max_step * batch_size < bag_num:
             max_step += 1
         for step in range(max_step):
-            step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))))
+            step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))),hp)
             x1, x2, bag1, bag2, y = step_data
             if train_type == 0:
                 x_img = Variable(x1).cuda()
