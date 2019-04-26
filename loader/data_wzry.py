@@ -51,7 +51,7 @@ def load_data(path,hp):
                     test_data.append(data_temp[key])
 
     print("train data: ", len(train_data))
-    print("vali data: ", len(vali_data))
+    print("semi data: ", len(semi_data))
     print("test data: ", len(test_data))
     text_label_data, img_label_data, text_semi_data, img_semi_data = None, None, None, None
     if ratio == 0:
