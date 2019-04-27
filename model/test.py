@@ -79,28 +79,29 @@ def test(test_data, hp, models):
 
     h = [None for i in range(view_num)]
     label = [None for i in range(view_num)]
+    batch_size = hp['batch_size'][0]
     for step in range(max_step):
         # get data
         step_data = get_batch(test_data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))),hp)
         x1, x2, bag1, bag2, y = step_data
         x_img = Variable(x1, volatile=True).cuda()
         x_text = Variable(x2, volatile=True).cuda()
-        h1 = models[0](x_img,bag1)
-        h2 = models[1](x_text,bag2)
+        h1,_,_ = models[0](x_img,bag1)
+        h2,_,_ = models[1](x_text,bag2)
 
-        if h[0] == None:
+        if step == 0:
             h[0] = h1.cpu().data.numpy()
             label[0] = y.numpy()
         else:
             h[0] = np.concatenate((h[0], h1.cpu().data.numpy()))
-            label[0] = np.concatenate((label[0], bz.numpy()))
+            label[0] = np.concatenate((label[0], y.numpy()))
 
-        if h[1] == None:
+        if step == 0:
             h[1] = h2.cpu().data.numpy()
             label[1] = y.numpy()
         else:
             h[1] = np.concatenate((h[1], h2.cpu().data.numpy()))
-            label[1] = np.concatenate((label[1], bz.numpy()))
+            label[1] = np.concatenate((label[1], y.numpy()))
 
     result = {}
     # test single view
@@ -127,11 +128,11 @@ def test(test_data, hp, models):
     h_average = np.concatenate(h_average, axis=0)
     h_max = np.concatenate(h_max, axis=0)
 
-    result['avg'] = test_single_view(view_num, h_average, label[0], hyper_parameter)
+    result['avg'] = test_single_view(h_average, label[0], hp)
     print("test result : average all")
     for key in result['avg'].keys():
         print(key, result['avg'][key], '\n')
-    result['max'] = test_single_view(view_num, h_max, label[0], hyper_parameter)
+    result['max'] = test_single_view(h_max, label[0], hp)
     print("test result : max all")
     for key in result['max'].keys():
         print(key, result['max'][key], '\n')
@@ -142,9 +143,9 @@ def test(test_data, hp, models):
 
 
 def save_result(filepath, result):
-    for key in result.keys():
-        path = "{}test_result.txt".format(filepath)
-        with open(path, 'w') as f:
+    path = "{}test_result.txt".format(filepath)
+    with open(path, 'w') as f:    
+        for key in result.keys():
+            f.write(key + '\n')
             for k in result[key].keys():
-                f.write(k + ' ' + str(result[key][k]) + '\n')
-    return
+                f.write("\t" + k + ' ' + str(result[key][k]) + '\n')

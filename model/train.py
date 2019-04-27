@@ -10,6 +10,14 @@ import random
 import numpy as np
 
 from loader.load_data import get_batch
+from model.loss import WassersteinLoss
+
+def cal_distance_matrix(k):
+    mm = np.zeros(k.shape)
+    for i in range(mm.shape[0]):
+        for j in range(mm.shape[1]):
+            mm[i][j] = k[i][i] + k[j][j] - 2*k[i][j]
+    return mm
   
 def pre_train(hp, models, train_data):
     print("----------start pre-training models----------")
@@ -29,6 +37,8 @@ def pre_train(hp, models, train_data):
         data_num = 0
         for i in range(2):
             data = train_data[i]
+            if data == None:
+                continue
             bag_num = len(data)
             data_num += bag_num
             max_step = int(bag_num/ batch_size)
@@ -43,11 +53,11 @@ def pre_train(hp, models, train_data):
                 b_y = Variable(y).cuda()
 
                 # forward
-                h = models[1](x_text,bag2)
+                h,_,_ = models[1](x_text,bag2)
 
                 # loss
                 loss = loss_func(h, b_y)
-                running_loss += loss.data[0] * x[1].size(0)
+                running_loss += loss.data[0] * x2.size(0)
 
                 # backward
                 optimizer.zero_grad()
@@ -72,7 +82,7 @@ def train(hp, models, train_data):
     k_0 = torch.nn.Softmax()(torch.eye(l))
     k_0 = k_0.data.numpy()
     #k_0_inv = np.linalg.inv(k_0)
-    w_loss = WassersteinLoss(k_0)
+    m = cal_distance_matrix(k_0)
 
     trade = hp['trade_off']  # 平衡系数
     lr = hp['lr']
@@ -86,16 +96,16 @@ def train(hp, models, train_data):
         models[i].train()
         par.append({'params': models[i].parameters()})
 
-    optimizer = optim.Adam(par, lr=lr)
+    optimizer = optim.Adam(par, lr=lr[0])
     scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
-    ae_loss = torch.nn.MSELoss(reduce=True, size_average=True)
+    ae_loss = torch.nn.MSELoss(reduction='elementwise_mean')
 
+    batch_size = hp['batch_size'][0]
     def train_for_dataset(data,train_type):
         loss_record = np.zeros(5)
         if data == None:
             return loss_record
         bag_num = len(data)
-        data_num += bag_num
         max_step = int(bag_num/ batch_size)
         while max_step * batch_size < bag_num:
             max_step += 1
@@ -112,94 +122,102 @@ def train(hp, models, train_data):
                 h2,fea2,dec2 = models[1](x_text,bag2)
 
                 # loss
-                loss1 = w_loss(h1,by)
-                loss2 = w_loss(h2,b_y)
+                w_loss = WassersteinLoss(m, hp['reg'])
                 ae_loss1 = ae_loss(fea1,dec1)
+                loss1 = w_loss(h1,b_y)
+                total_loss = loss1 + hp['ae'] * (ae_loss1)
+                optimizer.zero_grad()
+                total_loss.backward()
+                optimizer.step()
+
+                w_loss = WassersteinLoss(m, hp['reg'])
+                loss2 = w_loss(h2,b_y)
                 ae_loss2 = ae_loss(fea2,dec2)
-
-                total_loss = loss1 + loss2 + hp['ae'] * (ae_loss1 + ae_loss2)
-
-                loss_record[0] += loss1.data[0] * x1.size(0)
-                loss_record[1] += loss2.data[0] * x1.size(0)
-                loss_record[2] += ae_loss1.data[0] * x1.size(0)
-                loss_record[3] += ae_loss2.data[0] * x1.size(0)
+                total_loss = loss2 + hp['ae'] * (ae_loss2)
+                loss_record[0] += loss1.data.cpu().numpy()[0] * x1.size(0)
+                loss_record[1] += loss2.data.cpu().numpy()[0] * x1.size(0)
+                loss_record[2] += ae_loss1.data.cpu().numpy() * x1.size(0)
+                loss_record[3] += ae_loss2.data.cpu().numpy() * x1.size(0)
 
             elif train_type == 1:
                 x_text = Variable(x2).cuda()
                 b_y = Variable(y).cuda()
 
                 # forward
-                h2,fea2,dec2 = models[1](x_text)
+                h2,fea2,dec2 = models[1](x_text,bag2)
 
                 # loss
+                w_loss = WassersteinLoss(m, hp['reg'])
                 loss2 = w_loss(h2,b_y)
                 ae_loss2 = ae_loss(fea2,dec2)
 
                 total_loss = loss2 + hp['ae'] * (ae_loss2)
 
-                loss_record[1] += loss2.data[0] * x2.size(0)
-                loss_record[3] += ae_loss2.data[0] * x2.size(0)
+                loss_record[1] += loss2.data.cpu().numpy()[0] * x2.size(0)
+                loss_record[3] += ae_loss2.data.cpu().numpy() * x2.size(0)
 
             elif train_type == 2:
                 x_img = Variable(x1).cuda()
                 b_y = Variable(y).cuda()
 
                 # forward
-                h1,fea1,dec1 = models[0](x_img)
+                h1,fea1,dec1 = models[0](x_img,bag1)
 
                 # loss
+                w_loss = WassersteinLoss(m, hp['reg'])
                 loss1 = w_loss(h1,b_y)
                 ae_loss1 = ae_loss(fea1,dec1)
 
                 total_loss = loss1 + hp['ae'] * (ae_loss1)
 
-                loss_record[0] += loss1.data[0] * x1.size(0)
-                loss_record[2] += ae_loss1.data[0] * x1.size(0)
+                loss_record[0] += loss1.data.cpu().numpy()[0] * x1.size(0)
+                loss_record[2] += ae_loss1.data.cpu().numpy() * x1.size(0)
 
             elif train_type == 3:
                 x_img = Variable(x1).cuda()
                 x_text = Variable(x2).cuda()
 
                 # forward
-                h1,fea1,dec1 = models[0](x_img)
-                h2,fea2,dec2 = models[1](x_text)
+                h1,fea1,dec1 = models[0](x_img,bag1)
+                h2,fea2,dec2 = models[1](x_text,bag2)
 
                 # loss
+                w_loss = WassersteinLoss(m, hp['reg'])
                 semi_loss = w_loss(h1,h2)
                 ae_loss1 = ae_loss(fea1,dec1)
                 ae_loss2 = ae_loss(fea2,dec2)
 
                 total_loss = semi_loss + hp['ae'] * (ae_loss1 + ae_loss2)
 
-                loss_record[2] += ae_loss1.data[0] * x1.size(0)
-                loss_record[3] += ae_loss2.data[0] * x1.size(0)
-                loss_record[4] += semi_loss.data[0] * x1.size(0)
+                loss_record[2] += ae_loss1.data.cpu().numpy() * x1.size(0)
+                loss_record[3] += ae_loss2.data.cpu().numpy() * x1.size(0)
+                loss_record[4] += semi_loss.data.cpu().numpy()[0] * x1.size(0)
 
             elif train_type == 4:
                 x_text = Variable(x2).cuda()
 
                 # forward
-                h2,fea2,dec2 = models[1](x_text)
+                h2,fea2,dec2 = models[1](x_text,bag2)
 
                 # loss
                 ae_loss2 = ae_loss(fea2,dec2)
 
                 total_loss = ae_loss2
 
-                loss_record[3] += ae_loss2.data[0] * x2.size(0)
+                loss_record[3] += ae_loss2.data.cpu().numpy() * x2.size(0)
 
             elif train_type == 5:
                 x_img = Variable(x1).cuda()
 
                 # forward
-                h1,fea1,dec1 = models[0](x_img)
+                h1,fea1,dec1 = models[0](x_img,bag1)
 
                 # loss
                 ae_loss1 = ae_loss(fea1,dec1)
 
                 total_loss = ae_loss1
 
-                loss_record[2] += ae_loss1.data[0] * x1.size(0)
+                loss_record[2] += ae_loss1.data.cpu().numpy() * x1.size(0)
 
             # backward
             optimizer.zero_grad()
@@ -212,6 +230,7 @@ def train(hp, models, train_data):
         for epoch_1 in range(hp['epoch_1']):
             scheduler.step()
             for i in range(len(train_data)):
+                print(epoch,epoch_1,i)
                 data = train_data[i]
                 loss_for_dataset = train_for_dataset(data,i)
                 store_loss[epoch * hp['epoch_1'] + epoch_1] = loss_for_dataset.reshape((1,-1))
@@ -271,12 +290,11 @@ def train(hp, models, train_data):
             K = np.dot(v, np.dot(np.diag(u), v.T))
 
             # calculate M
-            w_loss.update_cost_matrix(K)
+            m = cal_distance_matrix(K)
 
     # 保存loss
     np.save("{}loss.npy".format(hp['rootdir']), store_loss)
     # 保存corr矩阵
-    np.save("{}M.npy".format(hp['rootdir']), w_loss.get_m())
+    np.save("{}M.npy".format(hp['rootdir']), m)
     np.save("{}K.npy".format(hp['rootdir']), K)
-    #保存model
-    save_model(models, hp['rootdir'])
+    return models

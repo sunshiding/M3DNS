@@ -6,9 +6,9 @@ import random
 
 def load_data(path,hp):
     #path = '/data/yangy/data_prepare/wzry/'
-    data_num = 116
-    test_num = int(116 * 0.3)
-    semi_num = int(116 * 0.21)
+    data_num = 99
+    test_num = int(data_num * 0.3)
+    semi_num = int(data_num * 0.21)
     train_num = data_num - test_num - semi_num
 
     data_id = list(range(data_num))
@@ -17,9 +17,9 @@ def load_data(path,hp):
     semi_id = data_id[train_num:train_num+semi_num]
     test_id = data_id[train_num+semi_num:]
 
-    np.save("{}train_id.npy",train_id)
-    np.save("{}semi_id.npy",semi_id)
-    np.save("{}test_id.npy",test_id)
+    np.save("{}train_id.npy".format(path),train_id)
+    np.save("{}semi_id.npy".format(path),semi_id)
+    np.save("{}test_id.npy".format(path),test_id)
 
     print("----------start reading train data----------")
     train_data = []
@@ -54,7 +54,7 @@ def load_data(path,hp):
     print("semi data: ", len(semi_data))
     print("test data: ", len(test_data))
     text_label_data, img_label_data, text_semi_data, img_semi_data = None, None, None, None
-    if ratio == 0:
+    if hp['ratio'] == 0:
         return [train_data,text_label_data, img_label_data, semi_data,text_semi_data, img_semi_data], test_data
     else:
         all_label_data, text_label_data, img_label_data = get_imcomplete_data(train_data,ratio)
@@ -77,10 +77,10 @@ def get_imcomplete_data(data,ratio):
     return all_data, img_data, text_data
 
 def get_batch(data, indices):
+    view_num = 2
     view_data = [[] for i in range(view_num)]
     bag_size = [[] for i in range(view_num)]
     bag_label = [[] for i in range(view_num)]
-    view_num = 2
     for i in indices:
         for j in range(view_num):
             instance = torch.FloatTensor(data[i][j].astype(float))
@@ -100,10 +100,11 @@ def get_batch(data, indices):
             bag_label[i] = None
     return view_data[0],view_data[1], bag_size[0], bag_size[1], bag_label[0]
 
-def test_is_valid(data, view_num):
-    instance1_len = torch.FloatTensor(data[0].astype(float)).shape[0]
-    instance2_len = torch.FloatTensor(data[1].astype(float)).shape[0]
+def test_is_valid(data):
     try:
+        view_num = 2
+        instance1_len = torch.FloatTensor(data[0].astype(float)).shape[0]
+        instance2_len = torch.FloatTensor(data[1].astype(float)).shape[0]
         for j in range(view_num):
             instance = torch.FloatTensor(data[j].astype(float))
             if j == 1:

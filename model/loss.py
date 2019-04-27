@@ -1,11 +1,13 @@
 from torch.autograd import Function
 from torch import nn
+import numpy as np
+import torch
+import ot
 
 class WassersteinLoss(Function):
-    def __init__(self, k, reg):
+    def __init__(self, m, reg):
         super(WassersteinLoss, self).__init__()
-        self.m = np.zeros(k.shape)
-        self.m = self.update_cost_matrix(k)
+        self.m = m
         self.log = {}
         self.reg = reg
     def get_m(self):
@@ -23,11 +25,11 @@ class WassersteinLoss(Function):
         self.save_for_backward(x, y)
         loss = torch.zeros(1).cuda()
         for i in range(x.shape[0]):
-            a = x[i].cpu().numpy()
+            a = x[i].cpu().numpy().reshape((-1,))
             a[a <= 0] = 1e-9
             a = a / np.sum(a)
             #print(y[i])
-            b = y[i].cpu().numpy()
+            b = y[i].cpu().numpy().reshape((-1,))
             b[b <= 0] = 1e-9
             b = b / np.sum(b)
 

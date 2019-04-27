@@ -20,7 +20,7 @@ linear_model = {
     'coco': [2211, 2048, 1024, 1024, 512, 512, 256, 256, 128, 128],
 }
 label_num = {
-    'wzry': 20,
+    'wzry': 54,
     'flickr': 20,
     'iapr': 20,
     'nus': 20,
@@ -67,13 +67,13 @@ if __name__ == '__main__':
     hp['reg'] = 1  # entropic regularization coefficient倒数
     hp['epoch_1'] = 2  # 每轮优化,第1阶段迭代次数
     hp['batch_size'] = [32,32,32] # 网络训练batch size
-    hp['lr_1'] = [0.0001, 0.0001, 0.0001]  # 网络训练初始学习率
+    hp['lr'] = [0.0001, 0.0001, 0.0001]  # 网络训练初始学习率
 
     hp['step_size'] = 500  # 学习率衰减步长
     hp['gamma'] = 0.5  # 学习率衰减指数
 
     hp['trade_off'] = 1  # 平衡系数
-    hp['ae'] = 1         # ae loss的系数
+    hp['ae'] = 1e-6         # ae loss的系数
 
     hp['eval'] = [0, 1, 2, 3, 4, 5]  # 评价指标
     hp['thread'] = 0.5  # 预测标签阈值
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     #     print(key, hp[key])
 
     time_str = time.strftime("%m%d-%H%M",time.localtime(time.time()))
-    rootdir = "{}/{}/{}/".format("./result",hp['dataname'],time_str)
+    rootdir = "{}/{}/{}/".format("/data/yangy/data_prepare/result",hp['dataname'],time_str)
     os.makedirs(rootdir, exist_ok=True)
     hp['rootdir'] = rootdir
 
@@ -105,7 +105,5 @@ if __name__ == '__main__':
     save_model(my_models,rootdir)
 
     # 测试模型
-    result = None
-    if is_test is True:
-        result = test(data[2], hp, my_models)
+    result = test(test_data, hp, my_models)
     

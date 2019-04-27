@@ -41,7 +41,7 @@ class TextNet(nn.Module):
     def __init__(self, neure_num):
         super(TextNet, self).__init__()
         self.encoder = make_layers(neure_num[:3])
-        self.decoder = make_layers(neure_num[:3])[::-1]
+        self.decoder = make_layers(neure_num[:3][::-1])
         self.feature = make_layers(neure_num[2:-1])
         self.fc = nn.Linear(neure_num[-2], neure_num[-1])
         self.sig = nn.Sigmoid()
@@ -49,13 +49,13 @@ class TextNet(nn.Module):
 
     def forward(self, x, bag):
         encoder = self.encoder(x)
-        decoder = self.decoder(x)
-        x = self.feature(encoder)
-        x = self.fc(x)
+        decoder = self.decoder(encoder)
+        fea = self.feature(encoder)
+        fea = self.fc(fea)
         y = []
         s = 0
         for i in range(len(bag)):
-            z = nn.MaxPool2d(kernel_size=(bag[i], 1))(x[s:(s + bag[i])].view(1, 1, bag[i], x.size(1)))
+            z = nn.MaxPool2d(kernel_size=(bag[i], 1))(fea[s:(s + bag[i])].view(1, 1, bag[i], fea.size(1)))
             s += bag[i]
             y.append(z.view(1, -1))
         y = torch.cat(y)
