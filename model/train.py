@@ -27,13 +27,12 @@ def pre_train(hp, models, train_data):
 
     optimizer = optim.Adam([{'params': models[1].parameters()}], lr=hp['pre_lr'])
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
+    batch_size = hp['pre_size']
     loss_func = nn.MSELoss()
 
     for epoch in range(hp['pre_epoch']):
         scheduler.step()
         running_loss = 0.0
-        models[1].train()
-        batch_size = hp['pre_size']
         data_num = 0
         for i in range(2):
             data = train_data[i]
@@ -72,8 +71,9 @@ def pre_train(hp, models, train_data):
 
 
 def train(hp, models, train_data):
-
-    models = pre_train(hp, models,train_data)
+    
+    if hp['pretrain'] == 1:
+        models = pre_train(hp, models, train_data)
 
     print("----------start training models----------")
     view_num = len(models)  # num of view
@@ -88,16 +88,14 @@ def train(hp, models, train_data):
     lr = hp['lr']
     ae_coe = hp['ae']
 
-    for i in range(view_num):
-        models[i].cuda()
-    
     par = []
     for i in range(view_num):
+        models[i].cuda()
         models[i].train()
         par.append({'params': models[i].parameters()})
 
     optimizer = optim.Adam(par, lr=lr[0])
-    scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     ae_loss = torch.nn.MSELoss(reduction='elementwise_mean')
 
     batch_size = hp['batch_size'][0]
@@ -193,7 +191,7 @@ def train(hp, models, train_data):
                 loss_record[3] += ae_loss2.data.cpu().numpy() * x1.size(0)
                 loss_record[4] += semi_loss.data.cpu().numpy()[0] * x1.size(0)
 
-            elif train_type == 4:
+            elif train_type == 4 and hp['ae'] != 0:
                 x_text = Variable(x2).cuda()
 
                 # forward
@@ -206,7 +204,7 @@ def train(hp, models, train_data):
 
                 loss_record[3] += ae_loss2.data.cpu().numpy() * x2.size(0)
 
-            elif train_type == 5:
+            elif train_type == 5 and hp['ae'] != 0:
                 x_img = Variable(x1).cuda()
 
                 # forward
@@ -238,7 +236,7 @@ def train(hp, models, train_data):
 
         # seconde stage
         K = 0
-        if not hp['fixed']:
+        if hp['fixed'] == 0:
             for i in range(view_num):
                 models[i].eval()
             T = np.zeros((l, l))

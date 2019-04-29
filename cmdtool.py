@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser  = ArgumentParser('M3DN')
     parser.add_argument('--gpu',type=str)
     parser.add_argument('--data',type=str)
-    parser.add_argument('--fixed',type=str,default='False')
+    parser.add_argument('--fixed',type=int,default=0)
     parser.add_argument('--ratio',type=float,default=0)
     args = parser.parse_args()
     
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         data = datas[i]
         gpu = gpus[i]
         screen_name = data + "-" + time_str + "-" + gpu
-        cmdstr = "python run.py --gpu={} --dataname={} --seed=0 --pre_epoch=30 --pre_size=512 --epoch=20 --epoch_1=2 --batch_size=16 --label={} --fixed={} --pretrain=True --ratio={}".format(gpu,data,str(label_num[data]),args.fixed,str(args.ratio))
+        cmdstr = "python run.py --gpu={} --dataname={} --seed=0 --pre_epoch=30 --pre_size=512 --epoch=20 --epoch_1=2 --batch_size=16 --label={} --fixed={} --pretrain=1 --ratio={}".format(gpu,data,str(label_num[data]),args.fixed,str(args.ratio))
         os.system("screen -dmS {}".format(screen_name))
         os.system('screen -X -S {} -p 0 -X stuff "{}"'.format(screen_name,cmdstr))
         os.system('screen -X -S {} -p 0 -X stuff "\n"'.format(screen_name))
