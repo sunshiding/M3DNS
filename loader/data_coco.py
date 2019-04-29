@@ -3,9 +3,13 @@ import torch
 import numpy as np
 from PIL import Image
 import pickle
+import random
+import pdb
+
 from loader.common import get_imcomplete_data
 from loader.common import deal_single_text
 from loader.common import get_batch
+from loader.label_select import select
 
 def load_data(path,hp):
     #path = '/data/yangy/data_prepare/COCO/'
@@ -25,8 +29,7 @@ def load_data(path,hp):
     np.save("{}test_id.npy".format(path),test_id)
 
     label = np.load(path+'coco_label.npy')
-    label_select = np.load(path + 'label_select.npy')
-    permutation = np.load(path + 'permutation.npy')
+    label_select = select(path,hp)
     text = np.load(path+'coco_text.npy')
     files = pickle.load(open(path+'coco_imgs.pkl','rb'))
     
@@ -34,23 +37,25 @@ def load_data(path,hp):
         target = label[idx,:]
         file = files[idx]
         file_path = path + 'train2014/'+file
-        img_blcok=2, text_block=4
+        img_blcok,text_block = 2,4
         bag1 = img_blcok**2
         bag2 = text_block
         if os.path.exists(file_path):
             try:
                 img = Image.open(file_path).convert('RGB').resize((224 * img_blcok, 224 * img_blcok))
+                img = np.array(img).transpose(2,0,1)
+                img = np.expand_dims(img, axis=0)
             except:
                 print("图片无法打开 ", file_path)
         if img is None:
             print(file_path)
-            print("未找到图片: ", idx)
-        
+            print("未找到图片: ", idx)       
         imgs = []
         for i in range(img_blcok):
             for j in range(img_blcok):
-                imgs.append(img[0:3, (i * 224):((i+1) * 224), (j * 224):((j+1) * 224)])
-        imgs = np.concatenate(imgs, 0)
+                imgs.append(img[:,:, (i * 224):((i+1) * 224), (j * 224):((j+1) * 224)])
+        #pdb.set_trace()
+        imgs = np.concatenate(imgs)
 
         #text = self.text[idx]
         text = np.load(path + 'text/' + str(idx) +'.npy')
@@ -75,11 +80,11 @@ def load_data(path,hp):
         test_data.append(single_data)
 
     print("train data: ", len(train_data))
-    print("vali data: ", len(vali_data))
+    print("semi data: ", len(semi_data))
     print("test data: ", len(test_data))
 
     text_label_data, img_label_data, text_semi_data, img_semi_data = None, None, None, None
-    if ratio == 0:
+    if hp['ratio'] == 0:
         return [train_data,text_label_data, img_label_data, semi_data,text_semi_data, img_semi_data], test_data
     else:
         all_label_data, text_label_data, img_label_data = get_imcomplete_data(train_data,ratio)

@@ -84,6 +84,8 @@ def test(test_data, hp, models):
         # get data
         step_data = get_batch(test_data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))),hp)
         x1, x2, bag1, bag2, y = step_data
+        print('img_bag',bag1)
+        print('txt_bag',bag2)
         x_img = Variable(x1, volatile=True).cuda()
         x_text = Variable(x2, volatile=True).cuda()
         h1,_,_ = models[0](x_img,bag1)

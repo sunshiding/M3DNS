@@ -47,12 +47,11 @@ def get_batch(data,indices):
         x_text.append(text)
         bags1.append(bag1)
         bags2.append(bag2)
-        ys.append(y)
+        ys.append(y.reshape((1,-1)))
     x_img = np.concatenate(x_img)
     x_img = torch.FloatTensor(x_img)
     x_text = np.concatenate(x_text)
     x_text = torch.FloatTensor(x_text)
     ys = np.concatenate(ys)
     ys = torch.FloatTensor(ys)
-
     return x_img,x_text,bags1,bags2,ys

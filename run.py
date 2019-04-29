@@ -5,6 +5,7 @@ import time
 import torch
 import random
 import pickle
+import pdb
 
 from loader.load_data import load_data
 from model.model import load_model
@@ -14,16 +15,16 @@ from model.test import test
 
 linear_model = {
     'wzry': [300, 256, 256, 128, 128, 64, 64],
-    'flickr': [1386, 1024, 512, 256, 128, 64],
+    'flickr': [1277, 1024, 512, 256, 128, 64],
     'iapr': [1312, 1024, 1024, 512, 512, 256, 256, 128, 128, 64],
     'nus': [1000, 512, 512, 256, 256, 128, 128, 64],
     'coco': [2211, 2048, 1024, 1024, 512, 512, 256, 256, 128, 128],
 }
 label_num = {
     'wzry': 54,
-    'flickr': 20,
-    'iapr': 20,
-    'nus': 20,
+    'flickr': 39,
+    'iapr': 10,
+    'nus': 10,
     'coco': 20,
 }
 
@@ -32,7 +33,12 @@ if __name__ == '__main__':
     parser.add_argument('--gpu',type=str)
     parser.add_argument('--dataname',type=str)
     parser.add_argument('--seed',type=int)
-    parser.add_argument('--pooling',type=str)
+    parser.add_argument('--pre_epoch',type=int)
+    parser.add_argument('--pre_size',type=int)
+    parser.add_argument('--epoch',type=int)
+    parser.add_argument('--epoch_1',type=int)
+    parser.add_argument('--batch_size',type=int)
+    parser.add_argument('--label',type=int)
     parser.add_argument('--fixed',type=bool)
     parser.add_argument('--pretrain',type=bool)
     parser.add_argument('--ratio',type=float)
@@ -52,33 +58,32 @@ if __name__ == '__main__':
 
     hp = {}
     hp['dataname'] = args.dataname
-    hp['pooling'] = args.pooling
     hp['fixed'] = args.fixed
     hp['pretrain'] = args.pretrain
     hp['ratio'] = args.ratio
     hp['train'] = args.train  # 是否训练模型 
     hp['test'] = args.test  # 是否测试模型
     
-    hp['pre_epoch'] = 30  # 预训练轮数
-    hp['pre_size'] = 512  # 预训练batch szie
+    hp['pre_epoch'] = args.pre_epoch  # 预训练轮数
+    hp['pre_size'] = args.pre_size  # 预训练batch szie
     hp['pre_lr'] = 0.001  # 预训练初始学习率
 
-    hp['epoch'] = 20  # 训练轮数
+    hp['epoch'] = args.epoch  # 训练轮数
     hp['reg'] = 1  # entropic regularization coefficient倒数
-    hp['epoch_1'] = 2  # 每轮优化,第1阶段迭代次数
-    hp['batch_size'] = [32,32,32] # 网络训练batch size
+    hp['epoch_1'] = args.epoch_1  # 每轮优化,第1阶段迭代次数
+    hp['batch_size'] = [args.batch_size] # 网络训练batch size
     hp['lr'] = [0.0001, 0.0001, 0.0001]  # 网络训练初始学习率
 
     hp['step_size'] = 500  # 学习率衰减步长
     hp['gamma'] = 0.5  # 学习率衰减指数
 
     hp['trade_off'] = 1  # 平衡系数
-    hp['ae'] = 1e-6         # ae loss的系数
+    hp['ae'] = 0         # ae loss的系数
 
     hp['eval'] = [0, 1, 2, 3, 4, 5]  # 评价指标
     hp['thread'] = 0.5  # 预测标签阈值
     
-    hp['label'] = label_num[args.dataname]
+    hp['label'] = args.label
     hp['neure_num'] = linear_model[args.dataname]
 
     # print("hyper parameter information: ")
@@ -103,7 +108,7 @@ if __name__ == '__main__':
 
     # 保存模型
     save_model(my_models,rootdir)
-
+    
     # 测试模型
     result = test(test_data, hp, my_models)
     

@@ -57,7 +57,7 @@ def pre_train(hp, models, train_data):
 
                 # loss
                 loss = loss_func(h, b_y)
-                running_loss += loss.data[0] * x2.size(0)
+                running_loss += loss.data * x2.size(0)
 
                 # backward
                 optimizer.zero_grad()
@@ -202,7 +202,7 @@ def train(hp, models, train_data):
                 # loss
                 ae_loss2 = ae_loss(fea2,dec2)
 
-                total_loss = ae_loss2
+                total_loss = hp['ae'] * ae_loss2
 
                 loss_record[3] += ae_loss2.data.cpu().numpy() * x2.size(0)
 
@@ -215,7 +215,7 @@ def train(hp, models, train_data):
                 # loss
                 ae_loss1 = ae_loss(fea1,dec1)
 
-                total_loss = ae_loss1
+                total_loss = hp['ae'] * ae_loss1
 
                 loss_record[2] += ae_loss1.data.cpu().numpy() * x1.size(0)
 
@@ -226,6 +226,7 @@ def train(hp, models, train_data):
         return loss_record
 
     store_loss = np.zeros((hp['epoch']*hp['epoch_1'],5))
+    K = 0
     for epoch in range(hp['epoch']):
         for epoch_1 in range(hp['epoch_1']):
             scheduler.step()
