@@ -7,9 +7,9 @@ class ImageNet(nn.Module):
     def __init__(self, label_num):
         super(ImageNet, self).__init__()
         self.feature = models.resnet18(pretrained=True)
-        self.feature.fc = nn.Linear(512, 256)
-        self.encoder = make_layers([256,128,64])
-        self.decoder = make_layers([64,128,256])
+        self.feature.fc = nn.Linear(512, 128)
+        self.encoder = make_layers([128, 64])
+        self.decoder = make_layers([64,128])
         self.fc = nn.Linear(64, label_num)
         self.sig = nn.Sigmoid()
         self._initialize_weights()

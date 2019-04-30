@@ -21,11 +21,14 @@ def cal_distance_matrix(k):
   
 def pre_train(hp, models, train_data):
     print("----------start pre-training models----------")
+    view_num = len(models)
+    par = []
+    for i in range(view_num):
+        models[i].cuda()
+        models[i].train()
+        par.append({'params': models[i].parameters()})
 
-    models[1].cuda()
-    models[1].train()
-
-    optimizer = optim.Adam([{'params': models[1].parameters()}], lr=hp['pre_lr'])
+    optimizer = optim.Adam(par, lr=hp['pre_lr'])
     scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     batch_size = hp['pre_size']
     loss_func = nn.MSELoss()
@@ -34,7 +37,7 @@ def pre_train(hp, models, train_data):
         scheduler.step()
         running_loss = 0.0
         data_num = 0
-        for i in range(2):
+        for i in range(3):
             data = train_data[i]
             if data == None:
                 continue
@@ -48,14 +51,17 @@ def pre_train(hp, models, train_data):
                 # get data
                 step_data = get_batch(data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))),hp)
                 x1, x2, bag1, bag2, y = step_data
-                x_text = Variable(x2).cuda()
                 b_y = Variable(y).cuda()
+                loss = 0
+                if i == 0 or i == 2:
+                    x_img = Variable(x1).cuda()
+                    h1,_,_ = models[0](x_img,bag1)
+                    loss += loss_func(h1, b_y)
+                if i == 0 or i == 1:
+                    x_text = Variable(x2).cuda()
+                    h2,_,_ = models[1](x_text,bag2)
+                    loss += loss_func(h2, b_y)
 
-                # forward
-                h,_,_ = models[1](x_text,bag2)
-
-                # loss
-                loss = loss_func(h, b_y)
                 running_loss += loss.data * x2.size(0)
 
                 # backward
@@ -91,7 +97,6 @@ def train(hp, models, train_data):
     par = []
     for i in range(view_num):
         models[i].cuda()
-        models[i].train()
         par.append({'params': models[i].parameters()})
 
     optimizer = optim.Adam(par, lr=lr[0])
@@ -228,6 +233,8 @@ def train(hp, models, train_data):
     for epoch in range(hp['epoch']):
         for epoch_1 in range(hp['epoch_1']):
             scheduler.step()
+            for t in range(view_num):
+                models[t].train()
             for i in range(len(train_data)):
                 print(epoch,epoch_1,i)
                 data = train_data[i]
@@ -240,31 +247,32 @@ def train(hp, models, train_data):
             for i in range(view_num):
                 models[i].eval()
             T = np.zeros((l, l))
-            m = w_loss.get_m()
             # calculate T
             for i in range(len(train_data)):
                 # get data
-                data = dataset[i]
+                if i > 2:
+                    continue
+                data = train_data[i]
+                if data == None:
+                    continue
                 for j in range(len(data)):
-                    if j > 2:
-                        continue
-                    x1, x2, bag1, bag2, b_y = get_batch(data,[j])
-                    b_y = b_y.reshape((-1,))
+                    x1, x2, bag1, bag2, b_y = get_batch(data,[j], hp)
+                    b_y = b_y.cpu().numpy().reshape((-1,))
                     b_y[b_y <= 0] = 1e-9
                     b_y = b_y / np.sum(b_y)
                         
                     x_img = None
                     x_text = None
-                    if j == 0 or j == 2:
-                        x_img = Variable(x1, volatile=True).cuda()
-                        h = models[0](x_img,bag1).cpu().data.numpy()
+                    if i == 0 or i == 2:
+                        x_img = Variable(x1).cuda()
+                        h = models[0](x_img,bag1)[0].cpu().data.numpy()
                         h[h <= 0] = 1e-9
                         h = h / np.sum(h)
                         Gs = ot.sinkhorn(h.reshape(-1), b_y.reshape(-1), m / np.max(m), hp['reg'])
                         T += Gs
-                    if j == 0 or j == 1:
-                        x_text = Variable(x2, volatile=True).cuda()
-                        h = models[j](x_text,bag2).cpu().data.numpy()
+                    if i == 0 or i == 1:
+                        x_text = Variable(x2).cuda()
+                        h = models[1](x_text,bag2)[0].cpu().data.numpy()
                         h[h <= 0] = 1e-9
                         h = h / np.sum(h)
                         Gs = ot.sinkhorn(h.reshape(-1), b_y.reshape(-1), m / np.max(m), hp['reg'])
