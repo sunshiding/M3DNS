@@ -95,7 +95,7 @@ if __name__ == '__main__':
     os.makedirs(rootdir, exist_ok=True)
     hp['rootdir'] = rootdir
 
-    pickle.dump(hp, open(rootdir+'parameter.pkl', 'wb'))
+    np.save('{}parameter.npy'.format(rootdir), hp)
 
     # 获取模型
     my_models = load_model(hp['label'], hp['neure_num'], hp['pretrain'],"{}/{}/{}/".format("./result",hp['dataname'],args.modelpath))

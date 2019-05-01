@@ -8,7 +8,7 @@ from torch.optim.lr_scheduler import StepLR
 import ot
 import random
 import numpy as np
-
+import pdb
 from loader.load_data import get_batch
 from model.loss import WassersteinLoss
 
@@ -87,8 +87,10 @@ def train(hp, models, train_data):
     # 初始化K0,M矩阵
     k_0 = torch.nn.Softmax()(torch.eye(l))
     k_0 = k_0.data.numpy()
-    #k_0_inv = np.linalg.inv(k_0)
+    k_0 = k_0 / np.max(k_0)
+    k_0_inv = np.linalg.inv(k_0)
     m = cal_distance_matrix(k_0)
+    m = m / np.max(m)
 
     trade = hp['trade_off']  # 平衡系数
     lr = hp['lr']
@@ -239,7 +241,7 @@ def train(hp, models, train_data):
                 print(epoch,epoch_1,i)
                 data = train_data[i]
                 loss_for_dataset = train_for_dataset(data,i)
-                store_loss[epoch * hp['epoch_1'] + epoch_1] = loss_for_dataset.reshape((1,-1))
+                store_loss[epoch * hp['epoch_1'] + epoch_1] += loss_for_dataset.reshape((-1))
 
         # seconde stage
         K = 0
@@ -289,8 +291,9 @@ def train(hp, models, train_data):
                                 G[i][j] -= (T[i][k] + T[k][i])
                     else:
                         G[i][j] = 2 * T[i][j]
-            # K = np.linalg.inv(k_0_inv - G / trade)
-            K = k_0 + G / trade
+
+            K = np.linalg.inv(k_0_inv - G / trade)
+            #K = k_0 + G / trade / np.max(G)
             K = (K + K.T) / 2
             u, v = np.linalg.eig(K)
             u[u < 0] = 0
@@ -298,6 +301,7 @@ def train(hp, models, train_data):
 
             # calculate M
             m = cal_distance_matrix(K)
+            m = m / np.max(m)
 
     # 保存loss
     np.save("{}loss.npy".format(hp['rootdir']), store_loss)
