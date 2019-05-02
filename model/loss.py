@@ -3,6 +3,7 @@ from torch import nn
 import numpy as np
 import torch
 import ot
+import pdb
 
 class WassersteinLoss(Function):
     def __init__(self, m, reg):
@@ -33,8 +34,9 @@ class WassersteinLoss(Function):
             b[b <= 0] = 1e-9
             b = b / np.sum(b)
 
-            dis, log_i = ot.sinkhorn2(a, b, self.m, self.reg, log=True)
-            self.log[i] = torch.FloatTensor(log_i['u'])
+            dis, log_i = ot.sinkhorn2(a, b, self.m, self.reg, log=True, method='sinkhorn_stabilized')
+            self.log[i] = torch.FloatTensor(log_i['logu'][:,0])
+
             loss += dis[0]
 
         return loss
@@ -47,8 +49,8 @@ class WassersteinLoss(Function):
         e = torch.ones(1, x.shape[1]).cuda()
         for i in range(x.shape[0]):
             u = self.log[i].cuda()
-            u = torch.log(u.view(1, -1)) / self.reg - torch.log(torch.sum(u, 0))[0] * e / (self.reg * L)
+            #u = torch.log(u.view(1, -1)) / self.reg - torch.log(torch.sum(u, 0))[0] * e / (self.reg * L)
+            u = u.view(1, -1) / self.reg - torch.log(torch.sum(torch.exp(u), 0))[0] * e / (self.reg * L)
             grad_x.append(u)
-
         grad_x = torch.cat(grad_x)
         return grad_x, None

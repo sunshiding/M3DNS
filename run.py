@@ -10,6 +10,7 @@ import pdb
 from loader.load_data import load_data
 from model.model import load_model
 from model.model import save_model
+from model.train import pre_train
 from model.train import train
 from model.test import test
 
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     hp['reg'] = 1  # entropic regularization coefficient倒数
     hp['epoch_1'] = args.epoch_1  # 每轮优化,第1阶段迭代次数
     hp['batch_size'] = [args.batch_size] # 网络训练batch size
-    hp['lr'] = [0.0001, 0.0001, 0.0001]  # 网络训练初始学习率
+    hp['lr'] = [1e-6]  # 网络训练初始学习率
 
     hp['step_size'] = 500  # 学习率衰减步长
     hp['gamma'] = 0.5  # 学习率衰减指数
@@ -103,6 +104,12 @@ if __name__ == '__main__':
     #获取数据
     train_data, test_data = load_data(hp)
 
+    #预训练模型
+    my_models = pre_train(hp, my_models, train_data)
+    
+    # 预训练结果
+    result = test(test_data,hp,my_models,'pretrain')    
+
     # 训练模型
     my_models = train(hp, my_models, train_data)
 
@@ -110,5 +117,5 @@ if __name__ == '__main__':
     save_model(my_models,rootdir)
     
     # 测试模型
-    result = test(test_data, hp, my_models)
+    result = test(test_data, hp, my_models,'final')
     

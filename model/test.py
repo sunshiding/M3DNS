@@ -64,7 +64,7 @@ def test_single_view(x, y, hp):
     return result
 
 
-def test(test_data, hp, models):
+def test(test_data, hp, models, stage):
     print("----------start testing models----------")
     view_num = len(models)
     for i in range(view_num):
@@ -116,7 +116,7 @@ def test(test_data, hp, models):
         print("test result : ", view_name[i])
         for key in result[view_name[i]].keys():
             print(key, result[view_name[i]][key], '\n')
-    np.save('{}predict_single.npy'.format(hp['rootdir']), result)
+    np.save('{}predict-single-{}.npy'.format(hp['rootdir'],stage), result)
     # test all view
     h_average = []
     h_max = []
@@ -139,13 +139,13 @@ def test(test_data, hp, models):
     for key in result['max'].keys():
         print(key, result['max'][key], '\n')
     print("----------end testing models----------")
-    np.save('{}predict_all.npy'.format(hp['rootdir']), result)
-    save_result(hp['rootdir'],result)
+    np.save('{}predict-all-{}.npy'.format(hp['rootdir'],stage), result)
+    save_result(hp['rootdir'],stage,result)
     return result
 
 
-def save_result(filepath, result):
-    path = "{}test_result.txt".format(filepath)
+def save_result(filepath, stage, result):
+    path = "{}test-result-{}.txt".format(filepath,stage)
     with open(path, 'w') as f:    
         for key in result.keys():
             f.write(key + '\n')

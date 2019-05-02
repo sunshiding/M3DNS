@@ -78,8 +78,8 @@ def pre_train(hp, models, train_data):
 
 def train(hp, models, train_data):
     
-    if hp['pretrain'] == 1:
-        models = pre_train(hp, models, train_data)
+    #if hp['pretrain'] == 1:
+    #    models = pre_train(hp, models, train_data)
 
     print("----------start training models----------")
     view_num = len(models)  # num of view
