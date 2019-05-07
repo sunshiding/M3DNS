@@ -83,10 +83,14 @@ def make_layers(cfg):
     return nn.Sequential(*layers)
 
 
-def load_model(label_num, neure_num, pre_train, rootpath):
+def load_model(hp):
     print("----------start loading models----------")
+    label_num = hp['label']
+    neure_num = hp['neure_num']
+    pre_train = hp['pretrain']
+    modelpath = "{}{}/".format(hp['modelpath'], hp['epoch'])
     my_models = [ImageNet(label_num), TextNet(neure_num+[label_num])]
-    if pre_train is True:
+    if pre_train == 1:
         for i in range(len(my_models)):
             path = "{}model_{}.pkl".format(rootpath,str(i))
             if os.path.exists(path):

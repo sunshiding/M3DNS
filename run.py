@@ -21,13 +21,6 @@ linear_model = {
     'nus': [1000, 512, 512, 256, 256, 128, 128, 64],
     'coco': [2211, 2048, 1024, 1024, 512, 512, 256, 256, 128, 128],
 }
-label_num = {
-    'wzry': 54,
-    'flickr': 39,
-    'iapr': 10,
-    'nus': 10,
-    'coco': 20,
-}
 
 if __name__ == '__main__':
     parser  = ArgumentParser('M3DN')
@@ -39,13 +32,16 @@ if __name__ == '__main__':
     parser.add_argument('--epoch',type=int)
     parser.add_argument('--epoch_1',type=int)
     parser.add_argument('--batch_size',type=int)
+    parser.add_argument('--test_size',type=int)
     parser.add_argument('--label',type=int)
+    parser.add_argument('--semi',type=int)
     parser.add_argument('--fixed',type=int)
     parser.add_argument('--pretrain',type=int)
     parser.add_argument('--ratio',type=float)
+    parser.add_argument('--lr',type=float)
     parser.add_argument('--train',type=bool,default=True)
     parser.add_argument('--test',type=bool,default=True)
-    parser.add_argument('--modelpath',type=str,default="")
+    parser.add_argument('--modelpath',type=str,default="/data/yangy/data_prepare/result/model/")
 
     args = parser.parse_args()
 
@@ -64,6 +60,7 @@ if __name__ == '__main__':
     hp['ratio'] = args.ratio
     hp['train'] = args.train  # 是否训练模型 
     hp['test'] = args.test  # 是否测试模型
+    hp['semi'] = args.semi  # 是否半监督训练
     
     hp['pre_epoch'] = args.pre_epoch  # 预训练轮数
     hp['pre_size'] = args.pre_size  # 预训练batch szie
@@ -73,7 +70,8 @@ if __name__ == '__main__':
     hp['reg'] = 1  # entropic regularization coefficient倒数
     hp['epoch_1'] = args.epoch_1  # 每轮优化,第1阶段迭代次数
     hp['batch_size'] = [args.batch_size] # 网络训练batch size
-    hp['lr'] = [1e-6]  # 网络训练初始学习率
+    hp['test_size'] = [args.test_size]  #网络测试batch size
+    hp['lr'] = [args.lr]
 
     hp['step_size'] = 500  # 学习率衰减步长
     hp['gamma'] = 0.5  # 学习率衰减指数
@@ -86,29 +84,30 @@ if __name__ == '__main__':
     
     hp['label'] = args.label
     hp['neure_num'] = linear_model[args.dataname]
+    hp['modelpath'] = "{}{}/{}/".format(args.modelpath,args.dataname,str(hp['ratio']))
 
     # print("hyper parameter information: ")
     # for key in hp.keys():
     #     print(key, hp[key])
 
     time_str = time.strftime("%m%d-%H%M",time.localtime(time.time()))
-    rootdir = "{}/{}/{}/".format("/data/yangy/data_prepare/result",hp['dataname'],time_str)
+    rootdir = "{}/{}/{}-semi-{}-fixed-{}-ratio-{}/".format("/data/yangy/data_prepare/result",hp['dataname'],time_str,str(hp['semi']),str(hp['fixed']),str(hp['ratio']))
     os.makedirs(rootdir, exist_ok=True)
     hp['rootdir'] = rootdir
 
     np.save('{}parameter.npy'.format(rootdir), hp)
 
     # 获取模型
-    my_models = load_model(hp['label'], hp['neure_num'], hp['pretrain'],"{}/{}/{}/".format("./result",hp['dataname'],args.modelpath))
+    my_models = load_model(hp)
 
     #获取数据
     train_data, test_data = load_data(hp)
 
     #预训练模型
-    my_models = pre_train(hp, my_models, train_data)
+    #my_models = pre_train(hp, my_models, train_data, test_data)
     
     # 预训练结果
-    result = test(test_data,hp,my_models,'pretrain')    
+    #result = test(test_data,hp,my_models,'pretrain')    
 
     # 训练模型
     my_models = train(hp, my_models, train_data)
@@ -118,4 +117,3 @@ if __name__ == '__main__':
     
     # 测试模型
     result = test(test_data, hp, my_models,'final')
-    

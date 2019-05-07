@@ -13,6 +13,7 @@ from loader.label_select import select
 
 def load_data(path,hp):
     #path = '/data/yangy/data_prepare/COCO/'
+    ratio = hp['ratio']
     data_num = 25000
     test_num = int(data_num * 0.3)
     semi_num = int(data_num * 0.21)

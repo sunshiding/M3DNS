@@ -14,6 +14,7 @@ from loader.label_select import select
 def load_data(path,hp):
     #path = '/data/yangy/data_prepare/NUS-WIDE/'
     #data_num = 24200
+    ratio = hp['ratio']
     data_num = 24200
     test_num = int(data_num * 0.3)
     semi_num = int(data_num * 0.21)

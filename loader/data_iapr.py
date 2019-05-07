@@ -15,6 +15,7 @@ error_id = ['4072']
 
 def load_data(path,hp):
     #path = '/data/yangy/data_prepare/iapr/'
+    ratio = hp['ratio']
     text_select = np.load(path + 'text_select.npy')
     #label_select = np.load(path + 'label_select.npy')
     label_select = select(path,hp)

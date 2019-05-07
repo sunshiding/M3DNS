@@ -50,7 +50,7 @@ class WassersteinLoss(Function):
         for i in range(x.shape[0]):
             u = self.log[i].cuda()
             #u = torch.log(u.view(1, -1)) / self.reg - torch.log(torch.sum(u, 0))[0] * e / (self.reg * L)
-            u = u.view(1, -1) / self.reg - torch.log(torch.sum(torch.exp(u), 0))[0] * e / (self.reg * L)
+            u = u.view(1, -1) / self.reg - torch.log(torch.sum(torch.exp(u), 0)) * e / (self.reg * L)
             grad_x.append(u)
         grad_x = torch.cat(grad_x)
         return grad_x, None

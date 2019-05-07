@@ -73,13 +73,13 @@ def test(test_data, hp, models, stage):
 
     # calculate output
     bag_num = len(test_data)
-    max_step = int(bag_num / hp['batch_size'][0])
-    while max_step * hp['batch_size'][0] < bag_num:
+    batch_size = hp['test_size'][0]
+    max_step = int(bag_num / batch_size)
+    while max_step * batch_size < bag_num:
         max_step += 1
 
     h = [None for i in range(view_num)]
     label = [None for i in range(view_num)]
-    batch_size = hp['batch_size'][0]
     for step in range(max_step):
         # get data
         step_data = get_batch(test_data,list(range(step * batch_size,min((step + 1) * batch_size,bag_num))),hp)

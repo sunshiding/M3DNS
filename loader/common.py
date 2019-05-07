@@ -4,12 +4,13 @@ import numpy as np
 from PIL import Image
 import pickle
 import csv
+import random
 
 def get_imcomplete_data(data,ratio):
     ratio = ratio / 2
     num = len(data)
     imcomplete_num = int(num * ratio)
-    data_id = list(range(len(num)))
+    data_id = list(range(num))
     random.shuffle(data_id)
     img_id = data_id[:imcomplete_num]
     text_id = data_id[imcomplete_num:imcomplete_num*2]

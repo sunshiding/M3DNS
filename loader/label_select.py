@@ -22,7 +22,17 @@ def select(path,hp):
             for row in csv_reader:
                 for i in range(1, len(row)):
                     count[int(row[i])] += 1
-
+    elif hp['dataname'].lower() == "wzry":
+        count = np.zeros(1744)
+        data_id = list(range(121))
+        for i in range(len(data_id)):
+            pkl_id = data_id[i]
+            filepath = path + 'wzry-new-' + str(pkl_id) + '.pkl'
+            if os.path.exists(filepath) is True:
+                data_temp = pickle.load(open(filepath, 'rb'))
+                for key in data_temp.keys():
+                    single_data = data_temp[key]
+                    count += single_data[-1].reshape(-1)
     label_select = []
     for i in range(num):
         index = np.argmax(count)

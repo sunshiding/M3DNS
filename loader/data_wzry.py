@@ -3,10 +3,12 @@ import pickle
 import torch
 import numpy as np
 import random
+from loader.label_select import select
 
 def load_data(path,hp):
     #path = '/data/yangy/data_prepare/wzry/'
-    data_num = 99
+    ratio = hp['ratio']
+    data_num = 121
     test_num = int(data_num * 0.3)
     semi_num = int(data_num * 0.21)
     train_num = data_num - test_num - semi_num
@@ -20,35 +22,46 @@ def load_data(path,hp):
     np.save("{}train_id.npy".format(path),train_id)
     np.save("{}semi_id.npy".format(path),semi_id)
     np.save("{}test_id.npy".format(path),test_id)
+    
+    label_select = select(path,hp)
 
     print("----------start reading train data----------")
     train_data = []
     for i in range(len(train_id)):
         pkl_id = train_id[i]
-        filepath = path + 'wzry' + str(pkl_id) + '.pkl'
+        filepath = path + 'wzry-new-' + str(pkl_id) + '.pkl'
         if os.path.exists(filepath) is True:
             data_temp = pickle.load(open(filepath, 'rb'))
             for key in data_temp.keys():
-                if test_is_valid(data_temp[key]):
-                    train_data.append(data_temp[key])
+                single_data = data_temp[key]
+                if test_is_valid(single_data):
+                    single_data[-1] = single_data[-1][label_select]
+                    if np.sum(single_data[-1]) > 0:
+                        train_data.append(single_data)
     semi_data = []
     for i in range(len(semi_id)):
         pkl_id = semi_id[i]
-        filepath = path + 'wzry' + str(pkl_id) + '.pkl'
+        filepath = path + 'wzry-new-' + str(pkl_id) + '.pkl'
         if os.path.exists(filepath) is True:
             data_temp = pickle.load(open(filepath, 'rb'))
             for key in data_temp.keys():
-                if test_is_valid(data_temp[key]):
-                    semi_data.append(data_temp[key])
+                single_data = data_temp[key]
+                if test_is_valid(single_data):
+                    single_data[-1] = single_data[-1][label_select]
+                    if np.sum(single_data[-1]) > 0:
+                        semi_data.append(single_data)
     test_data = []
     for i in range(len(test_id)):
         pkl_id = test_id[i]
-        filepath = path + 'wzry' + str(pkl_id) + '.pkl'
+        filepath = path + 'wzry-new-' + str(pkl_id) + '.pkl'
         if os.path.exists(filepath) is True:
             data_temp = pickle.load(open(filepath, 'rb'))
             for key in data_temp.keys():
-                if test_is_valid(data_temp[key]):
-                    test_data.append(data_temp[key])
+                single_data = data_temp[key]
+                if test_is_valid(single_data):
+                    single_data[-1] = single_data[-1][label_select]
+                    if np.sum(single_data[-1]) > 0:
+                        test_data.append(single_data)
 
     print("train data: ", len(train_data))
     print("semi data: ", len(semi_data))
@@ -65,7 +78,7 @@ def get_imcomplete_data(data,ratio):
     ratio = ratio / 2
     num = len(data)
     imcomplete_num = int(num * ratio)
-    data_id = list(range(len(num)))
+    data_id = list(range(num))
     random.shuffle(data_id)
     img_id = data_id[:imcomplete_num]
     text_id = data_id[imcomplete_num:imcomplete_num*2]

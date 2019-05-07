@@ -6,11 +6,14 @@ from torch.autograd import Variable
 from torch.optim.lr_scheduler import StepLR
 
 import ot
+import os
 import random
 import numpy as np
 import pdb
 from loader.load_data import get_batch
 from model.loss import WassersteinLoss
+from model.test import test
+from model.model import save_model
 
 def cal_distance_matrix(k):
     mm = np.zeros(k.shape)
@@ -19,7 +22,7 @@ def cal_distance_matrix(k):
             mm[i][j] = k[i][i] + k[j][j] - 2*k[i][j]
     return mm
   
-def pre_train(hp, models, train_data):
+def pre_train(hp, models, train_data,test_data):
     print("----------start pre-training models----------")
     view_num = len(models)
     par = []
@@ -37,6 +40,8 @@ def pre_train(hp, models, train_data):
         scheduler.step()
         running_loss = 0.0
         data_num = 0
+        for i in range(view_num):
+            models[i].train()
         for i in range(3):
             data = train_data[i]
             if data == None:
@@ -68,10 +73,16 @@ def pre_train(hp, models, train_data):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-
         # epoch loss
         epoch_loss = running_loss / data_num
         print('epoch {}/{} | Loss: {:.9f}'.format(epoch, hp['pre_epoch'], epoch_loss))
+
+        rootpath = "{}{}/".format(hp['modelpath'],str(epoch+1))
+        os.makedirs(rootpath,exist_ok=True)
+        save_model(models,rootpath)
+        hp['rootdir'] = rootpath
+        result = test(test_data,hp,models,'pretrain')
+
     print("----------end pre-training models----------")
     return models
 
@@ -109,6 +120,10 @@ def train(hp, models, train_data):
     def train_for_dataset(data,train_type):
         loss_record = np.zeros(5)
         if data == None:
+            return loss_record
+        if train_type in [4,5] and hp['ae'] == 0:
+            return loss_record
+        if train_type == 3 and hp['semi'] == 0:
             return loss_record
         bag_num = len(data)
         max_step = int(bag_num/ batch_size)
@@ -178,7 +193,7 @@ def train(hp, models, train_data):
                 loss_record[0] += loss1.data.cpu().numpy()[0] * x1.size(0)
                 loss_record[2] += ae_loss1.data.cpu().numpy() * x1.size(0)
 
-            elif train_type == 3:
+            elif train_type == 3 and hp['semi'] == 1:
                 x_img = Variable(x1).cuda()
                 x_text = Variable(x2).cuda()
 
