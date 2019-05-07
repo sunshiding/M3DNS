@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 
 all_datas = ['wzry','flickr','iapr','nus','coco']
 label_num = {'wzry':80, 'flickr': 30,'iapr': 27,'nus': 30,'coco': 23}
+pre_epoch = {'wzry':18, 'flickr': 11,'iapr': 12,'nus': 11,'coco': 11}
 
 def parse_datas(datas):
     if datas == "all":
@@ -38,7 +39,7 @@ if __name__ == '__main__':
     semis = parse_gpu(args.semi)
     ratios = parse_gpu(args.ratio)
     fixeds = parse_gpu(args.fixed)
-    lrs = ["1e-" + w for w in parse_gpu(args.lr)
+    lrs = ["1e-" + w for w in parse_gpu(args.lr)]
     time_str = time.strftime("%m%d-%H%M",time.localtime(time.time()))
     
     for i in range(len(datas)):
@@ -57,7 +58,7 @@ if __name__ == '__main__':
                         #    epoch = 2
                         #else:
                         epoch = 2
-                        cmdstr = "python run.py --gpu={} --dataname={} --seed=0 --pre_epoch=20 --pre_size=32 --epoch={} --epoch_1=2 --batch_size=32 --test_size={} --label={} --fixed={} --semi={} --pretrain={} --ratio={} --lr={}".format(gpu,data,str(epoch),str(test_size),str(label_num[data]), fixed, semi, args.pretrain, str(ratio),lr)
+                        cmdstr = "python run.py --gpu={} --dataname={} --seed=0 --pre_epoch={} --pre_size=32 --epoch={} --epoch_1=2 --batch_size=32 --test_size={} --label={} --fixed={} --semi={} --pretrain={} --ratio={} --lr={}".format(gpu,data,pre_epoch[data],str(epoch),str(test_size),str(label_num[data]), fixed, semi, args.pretrain, str(ratio),lr)
                         if args.screen == 1:
                             os.system("screen -dmS {}".format(screen_name))
                             os.system('screen -X -S {} -p 0 -X stuff "{}"'.format(screen_name,cmdstr))

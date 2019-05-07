@@ -92,7 +92,7 @@ def load_model(hp):
     my_models = [ImageNet(label_num), TextNet(neure_num+[label_num])]
     if pre_train == 1:
         for i in range(len(my_models)):
-            path = "{}model_{}.pkl".format(rootpath,str(i))
+            path = "{}model_{}.pkl".format(modelpath,str(i))
             if os.path.exists(path):
                 my_models[i].load_state_dict(torch.load(path))
             else:

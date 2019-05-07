@@ -91,7 +91,7 @@ if __name__ == '__main__':
     #     print(key, hp[key])
 
     time_str = time.strftime("%m%d-%H%M",time.localtime(time.time()))
-    rootdir = "{}/{}/{}-semi-{}-fixed-{}-ratio-{}/".format("/data/yangy/data_prepare/result",hp['dataname'],time_str,str(hp['semi']),str(hp['fixed']),str(hp['ratio']))
+    rootdir = "{}/{}/{}-semi-{}-fixed-{}-ratio-{}-lr-{}/".format("/data/yangy/data_prepare/result",hp['dataname'],time_str,str(hp['semi']),str(hp['fixed']),str(hp['ratio']),str(args.lr))
     os.makedirs(rootdir, exist_ok=True)
     hp['rootdir'] = rootdir
 
